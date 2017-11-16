@@ -1,107 +1,193 @@
 {
-  "author": "Adam Riddick",
-  "category": "Utility",
-  "demands": [],
-  "description": "Release task to generate release notes based on all changes between releases.",
-  "execution": {
-      "PowerShell": {
-          "argumentFormat": "",
-          "target": "$(currentDirectory)\\ReleaseNotes.ps1",
-          "workingDirectory": "$(currentDirectory)"
-      }
-  },
-  "friendlyName": "Release Notes",
-  "groups": [
-      {
-          "displayName": "Outputs",
-          "isExpanded": false,
-          "name": "outputs"
-      }
-  ],
-  "helpMarkDown": "See [https://github.com/AdamRiddick/release-notes/wiki]",
-  "id": "3f741590-c8a9-11e7-9d56-d1988cf209e0",
-  "inputs": [
-      {
-          "defaultValue": "",
-          "groupName": "outputs",
-          "helpMarkDown": "The path to save a file with the release notes output.",
-          "label": "Output file path",
-          "name": "outputfilePath",
-          "required": false,
-          "type": "string"
-      },
-      {
-          "defaultValue": "",
-          "groupName": "outputs",
-          "helpMarkDown": "The name of the release variable to save the release notes output to - This can be used later in your environment to output the release notes, for example, within an email task.",
-          "label": "Output variable name",
-          "name": "outputVariableName",
-          "required": false,
-          "type": "string"
-      },
-      {
-          "defaultValue": "",
-          "helpMarkDown": "Name of the release environment to compare build artifacts in. If not provided, the environment housing this task is used.",
-          "label": "Release Environment Name",
-          "name": "releaseEnvironmentName",
-          "required": false,
-          "type": "string"
-      },
-      {
-          "defaultValue": "",
-          "helpMarkDown": "Personal access token to use in calling TFS/Team Services API's to gather release notes.",
-          "label": "Personal Access Token",
-          "name": "personalAccessToken",
-          "required": true,
-          "type": "string"
-      },
-      {
-          "defaultValue": "",
-          "helpMarkDown": "Release notes template.",
-          "label": "Template",
-          "name": "template",
-          "required": false,
-          "type": "multiLine"
-      },
-      {
-          "defaultValue": "",
-          "helpMarkDown": "Replacement tag for changeset message.",
-          "label": "Template Message Variable",
-          "name": "templateMessageVariable",
-          "required": false,
-          "type": "string"
-      },
-      {
-          "defaultValue": "",
-          "helpMarkDown": "Replacement tag to define template to use per message.",
-          "label": "Template Messages Variable",
-          "name": "templateMessagesVariable",
-          "required": false,
-          "type": "string"
-      }
-  ],
-  "instanceNameFormat": "Release Notes",
-  "links": {
-      "getstarted": {
-          "uri": "https://github.com/AdamRiddick/release-notes/wiki"
-      },
-      "support": {
-          "uri": "https://github.com/AdamRiddick/release-notes/issues"
-      }
-  },
-  "minimumAgentVersion": "1.95.0",
-  "name": "ReleaseNotes",
-  "tags": [
-      "Package",
-      "Publish",
-      "Release"
-  ],
-  "version": {
-      "Major": "1",
-      "Minor": "0",
-      "Patch": "0"
-  },
-  "visibility": [
-      "Release"
-  ]
+    "author": "Adam Riddick",
+    "category": "Utility",
+    "demands": [],
+    "description": "Release task to generate release notes based on all changes between releases.",
+    "execution": {
+        "PowerShell": {
+            "argumentFormat": "",
+            "target": "$(currentDirectory)\\ReleaseNotes.ps1",
+            "workingDirectory": "$(currentDirectory)"
+        }
+    },
+    "friendlyName": "Release Notes",
+    "groups": [
+        {
+            "displayName": "Outputs",
+            "isExpanded": false,
+            "name": "outputs"
+        },
+        {
+            "displayName": "Email Output",
+            "isExpanded": false,
+            "name": "emailOutput"
+        }
+    ],
+    "helpMarkDown": "See [https://github.com/AdamRiddick/release-notes/wiki]",
+    "id": "3f741590-c8a9-11e7-9d56-d1988cf209e0",
+    "inputs": [
+        {
+            "defaultValue": "",
+            "helpMarkDown": "Personal access token to use in calling TFS/Team Services API's to gather release notes.",
+            "label": "Personal Access Token",
+            "name": "personalAccessToken",
+            "required": true,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "BCC Addresses. Separate by semicolon (;).",
+            "label": "Email BCC",
+            "name": "emailBCC",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "Email addresses to send from.",
+            "label": "Email From",
+            "name": "emailFrom",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "To Addresses. Separate by semicolon (;).",
+            "label": "Email To",
+            "name": "emailTo",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "The subject of the email to sent.",
+            "label": "Email Subject",
+            "name": "emailSubject",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "outputs",
+            "helpMarkDown": "The path to save a file with the release notes output.",
+            "label": "Output file path",
+            "name": "outputfilePath",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "outputs",
+            "helpMarkDown": "The name of the release variable to save the release notes output to - This can be used later in your environment to output the release notes. Note that the output will be base 64 encoded.",
+            "label": "Output variable name",
+            "name": "outputVariableName",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "helpMarkDown": "Name of the release environment to compare build artifacts in. If not provided, the environment housing this task is used.",
+            "label": "Release Environment Name",
+            "name": "releaseEnvironmentName",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "CC Addresses. Separate by semicolon (;).",
+            "label": "Email CC",
+            "name": "emailCC",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "Password for the SMTP server.",
+            "label": "SMTP Password",
+            "name": "smtpPassword",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "Port ofthe SMTP server.",
+            "label": "SMTP Port",
+            "name": "smtpPort",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "Name or IP Address of the SMTP server.",
+            "label": "SMTP Server",
+            "name": "smtpServer",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "groupName": "emailOutput",
+            "helpMarkDown": "Username for the SMTP server.",
+            "label": "SMTP Username",
+            "name": "smtpUsername",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "helpMarkDown": "Release notes template.",
+            "label": "Template",
+            "name": "template",
+            "required": false,
+            "type": "multiLine"
+        },
+        {
+            "defaultValue": "",
+            "helpMarkDown": "Replacement tag for changeset message.",
+            "label": "Template Message Variable",
+            "name": "templateMessageVariable",
+            "required": false,
+            "type": "string"
+        },
+        {
+            "defaultValue": "",
+            "helpMarkDown": "Replacement tag to define template to use per message.",
+            "label": "Template Messages Variable",
+            "name": "templateMessagesVariable",
+            "required": false,
+            "type": "string"
+        }
+    ],
+    "instanceNameFormat": "Release Notes",
+    "links": {
+        "getstarted": {
+            "uri": "https://github.com/AdamRiddick/release-notes/wiki"
+        },
+        "support": {
+            "uri": "https://github.com/AdamRiddick/release-notes/issues"
+        }
+    },
+    "minimumAgentVersion": "1.95.0",
+    "name": "ReleaseNotes",
+    "tags": [
+        "Package",
+        "Publish",
+        "Release"
+    ],
+    "version": {
+        "Major": "1",
+        "Minor": "1",
+        "Patch": "0"
+    },
+    "visibility": [
+        "Release"
+    ]
 }

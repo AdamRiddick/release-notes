@@ -1,5 +1,20 @@
 [CmdletBinding()]
 param (
+    [parameter(Mandatory=$false,HelpMessage="BCC Addresses. Separate by semicolon (;).")]
+    $emailBCC,
+
+    [parameter(Mandatory=$false,HelpMessage="CC Addresses. Separate by semicolon (;).")]
+    $emailCC,
+
+    [parameter(Mandatory=$false,HelpMessage="Email addresses to send from.")]
+    $emailFrom,
+
+    [parameter(Mandatory=$false,HelpMessage="To Addresses. Separate by semicolon (;).")]
+    $emailTo,
+
+    [parameter(Mandatory=$false,HelpMessage="The subject of the email to send.")]
+    $emailSubject,
+
     [parameter(Mandatory=$false,HelpMessage="The path to save a file with the release notes output.")]
     $outputfilePath,
 
@@ -12,14 +27,26 @@ param (
     [parameter(Mandatory=$true,HelpMessage="Personal access token to use in calling TFS/Team Services API's to gather release notes.")]
     $personalAccessToken,
 
+    [parameter(Mandatory=$false,HelpMessage="Password for the SMTP server.")]
+    $smtpPassword,
+
+    [parameter(Mandatory=$false,HelpMessage="Port of the SMTP server.")]
+    $smtpPort,  
+
+    [parameter(Mandatory=$false,HelpMessage="Name or IP Address of the SMTP server.")]
+    $smtpServer, 
+    
+    [parameter(Mandatory=$false,HelpMessage="Username for the SMTP server.")]
+    $smtpUsername, 
+
     [parameter(Mandatory=$false,HelpMessage="Release notes template.")]
-    [String]$template = '<ul style="margin:0; padding:0;">{messages}<li style="margin:0 0 1em; list-style:disc inside; mso-special-format:bullet;">{message}</li>{messages}</ul>',
+    [String]$template = "<ul>{messages}<li>{message}</li>{messages}</ul>",
 
     [parameter(Mandatory=$false,HelpMessage="Replacement tag for changeset message.")]
-    [String]$templateMessageVariable = '{message}',
+    [String]$templateMessageVariable = "{message}",
 
     [parameter(Mandatory=$false,HelpMessage="Replacement tag to define template to use per message.")]
-    [String]$templateMessagesVariable = '{message}'
+    [String]$templateMessagesVariable = "{messages}"
 )
 
 Write-Host "Begin Creating Release Notes From Current Release"
@@ -54,7 +81,6 @@ Write-Host "Current Environment Name [$currentEnvironmentName]"
 Write-Host "Current Release Id [$currentReleaseId]"
 Write-Host "Output File Path [$outputFilePath]"
 Write-Host "Output Variable Name [$outputVariableName]"
-Write-Host "Personal Access Token [$personalAccessToken]"
 Write-Host "Release Definition Id [$releaseDefinitionId]"
 Write-Host "Team Project [$teamProject]"
 Write-Host "Template [$template]"
@@ -66,7 +92,7 @@ Write-Host "Template Messages Variable [$templateMessagesVariable]"
 #############################################################################################################################################
 # Get the latest complete releases, so we can compare their build artifacts
 $previewUrl = $baseApiUri -replace ".visualstudio.com",  ".vsrm.visualstudio.com/defaultcollection" #Preview requires vsrm in the URL, this is temp.
-$releaseUri = "$($previewUrl)release/releases?definitionId=$releaseDefinitionId&`$Expand=environments,artifacts&queryOrder=descending&api-version=4.1-preview"
+$releaseUri = "$($previewUrl)/release/releases?definitionId=$releaseDefinitionId&`$Expand=environments,artifacts&queryOrder=descending&api-version=4.1-preview"
 Write-Host "Invoking release endpoint to find latest complete releases [$releaseUri]"
 $allReleases = Invoke-RestMethod -ContentType "application/json" -Method Get -Uri $releaseUri -Headers $authorizationHeader
 
@@ -159,8 +185,12 @@ Write-Host "Generated Release Note Output"
 # If we have an output variable name, save to it
 if(-not [String]::IsNullOrWhiteSpace($outputVariableName))
 {
+    # VSTS does not support mult-line variables, so the output must be base 64 encoded.
+    $encoding = [system.Text.Encoding]::UTF8
+    $outputByteArray = $encoding.GetBytes($output)
+    $encodedOutput = [Convert]::ToBase64String($outputByteArray)
     Write-Host "Assigning output to variable [$outputVariableName]"
-    Write-Host "##vso[task.setvariable variable=$outputVariableName]$output"
+    Write-Host "##vso[task.setvariable variable=$outputVariableName]$encodedOutput"
 }
 
 # If we have an output filepath, save to it
@@ -168,6 +198,54 @@ if(-not [String]::IsNullOrWhiteSpace($outputfilePath))
 {
     Write-Host "Saving generated output to file [$outputFilePath]"
     Set-Content $outputFilePath $output
+}
+
+# If we have required email input, email it
+if(-not [String]::IsNullOrWhiteSpace($smtpServer))
+{
+    if([String]::IsNullOrWhiteSpace($smtpPort))
+    {
+        Write-Host "Unable to send email, SMTP port has not been provided."
+    }
+
+    if([String]::IsNullOrWhiteSpace($smtpUsername))
+    {
+        Write-Host "Unable to send email, SMTP username has not been provided."
+    }
+
+    if([String]::IsNullOrWhiteSpace($smtpPassword))
+    {
+        Write-Host "Unable to send email, SMTP password has not been provided."
+    }
+
+    if([String]::IsNullOrWhiteSpace($emailSubject))
+    {
+        $emailSubject = "Release Notes For Release [$($release.name)]"
+    }
+
+    Write-Host "Sending release notes email with subject [$emailSubject]"
+
+    $emailMessage = new-object Net.Mail.MailMessage;
+    $emailMessage.Body = $output;
+    $emailMessage.IsBodyHtml = $true;
+    $emailMessage.From = $emailFrom;
+    $emailMessage.To.Add($emailTo);
+    $emailMessage.Subject = $emailSubject;
+
+    if(-not [String]::IsNullOrWhiteSpace($emailCC))
+    {
+        $emailCC.split(";") | ForEach-Object { $emailMessage.CC.Add($_) }
+    }
+
+    if(-not [String]::IsNullOrWhiteSpace($emailBCC))
+    {
+        $emailBCC.split(";") | ForEach-Object { $emailMessage.Bcc.Add($_) }
+    }
+
+    $smtp = new-object Net.Mail.SmtpClient($smtpServer, $smtpPort);
+    $smtp.EnableSSL = $true;
+    $smtp.Credentials = New-Object System.Net.NetworkCredential($smtpUsername, $smtpPassword);
+    $smtp.send($emailMessage);
 }
 
 Write-Host "Release Note Creation Complete"
